@@ -1,10 +1,8 @@
-from PIL import Image
+import bchlib
 
-im = Image.new(mode="1", size=(25, 25))
+BCH_POLYNOMIAL = 1335
+BCH_BITS = 15
 
-data = im.load()
-for x in range(25):
-    for y in range(25):
-        data[x,y] = (3*(x//1) + 5*(y//1)) % 2
+bch = bchlib.BCH(BCH_POLYNOMIAL, BCH_BITS)
 
-im.show()
+print(bch.encode(13))
