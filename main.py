@@ -8,6 +8,10 @@ from PIL import Image
 DEV_QR_VERSION = 8
 DEV_VIEW_SCALE_FACTOR = 32
 
+# Format Info
+FORMAT_ERROR_CORRECTION_LEVEL = 0
+FORMAT_MASK_PATTERN = 0
+FORMAT_DATA_MODE = 1
 
 # Program Variables
 VAR_QR_SIZE = DEV_QR_VERSION * 4 + 17
@@ -68,6 +72,12 @@ for x_index, x in enumerate(PatternCoords):
         QR_CODE.paste(1, (x-1,y-1,x+2,y+2))
         QR_CODE_PIXELS[x,y] = 0
 
+# Format Information
+
+#   Error Correction Level
+
+
+#   Mask Patterns
 
 
 
