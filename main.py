@@ -1,4 +1,5 @@
 import numpy as np
+from math import *
 from PIL import Image
 
 # --- VARIABLES ---
@@ -11,7 +12,7 @@ DEV_VIEW_SCALE_FACTOR = 32
 # Format Info
 FORMAT_ERROR_CORRECTION_LEVEL = 'L'
 FORMAT_MASK_PATTERN = 0b001
-FORMAT_DATA_MODE = 1
+FORMAT_MODE_INDICATOR = 0b0010
 
 # Program Variables
 VAR_QR_SIZE = DEV_QR_VERSION * 4 + 17
@@ -20,7 +21,6 @@ QR_CODE = Image.new(mode="1", size=(VAR_QR_SIZE, VAR_QR_SIZE), color=1)
 QR_CODE_PIXELS = QR_CODE.load()
 
 
-BCH = lambda key: (key<<10)
 
 # --- PROGRAM ---
 
@@ -45,6 +45,8 @@ for x in range(8, VAR_QR_SIZE - 7):
 
 for y  in range(8, VAR_QR_SIZE - 7):
     QR_CODE_PIXELS[6,y] = y%2
+
+QR_CODE_PIXELS[8, VAR_QR_SIZE - 8] = 0
 
 # Alignment Patterns
 PatternLocations = {
@@ -93,32 +95,31 @@ format_information_coord = {
     14: [(8,0), (VAR_QR_SIZE-1,8)]
 }
 
-def get_qr_format_bits(ec_level, mask_pattern):
-    # 1. Create the 5-bit data string
-    # EC Level: L=01, M=00, Q=11, H=10
-    ec_bits = { 'L': 0b01, 'M': 0b00, 'Q': 0b11, 'H': 0b10 }[ec_level]
-    data = (ec_bits << 3) | mask_pattern  # Shift EC left by 3, add mask
-    
-    # 2. Calculate BCH parity (divide by 10100110111)
-    # Generator polynomial: 0x537 (10100110111)
-    generator = 0x537
-    remainder = data << 10  # Shift left by 10 to make room for parity
-    
-    for i in range(4, -1, -1):
-        if remainder & (1 << (i + 10)):
-            remainder ^= generator << i
-            
-    # 3. Combine data and parity
-    format_info = (data << 10) | remainder
-    
-    # 4. XOR with the fixed mask (101010000010010) to avoid all-white modules
-    format_info ^= 0x5412
-    
-    return format_info
+def format_string(ERROR_CORRECTION_LEVEL, MASK_PATTERN):
+    format_error_correction_bin ={
+        'L': 0b01,
+        'M': 0b00,
+        'Q': 0b11,
+        'H': 0b10
+    }
 
-format_information_encoded = np.base_repr(get_qr_format_bits(FORMAT_ERROR_CORRECTION_LEVEL, FORMAT_MASK_PATTERN), base=2)
+    generator = 0b10100110111
+    format_information_mask = 0b101010000010010
 
-print(format_information_encoded)
+    format_information = (format_error_correction_bin[FORMAT_ERROR_CORRECTION_LEVEL] << 3) | FORMAT_MASK_PATTERN
+
+    format_information_error_correction = format_information << 10
+
+    while format_information_error_correction >= (1<<10):
+        padded_generator = generator << (floor(np.log2(format_information_error_correction)) - 10)
+        format_information_error_correction ^= padded_generator
+
+    format_information_encoded = (format_information << 10) | format_information_error_correction
+    format_information_encoded ^= format_information_mask
+
+    return bin(format_information_encoded)[2:]
+
+format_information_encoded = format_string(FORMAT_ERROR_CORRECTION_LEVEL, FORMAT_MASK_PATTERN)
 
 for i in range(15):
     a, b = format_information_coord[i]
@@ -144,6 +145,8 @@ def mask(i, x, y):
             return not ((x * y % 2 + x * y % 3) % 2)
         case 7:
             return not (((x + y) % 2 + x * y % 3) % 2)
+
+
 
 
 SCALED_QR_CODE = QR_CODE.resize((VAR_QR_SIZE * DEV_VIEW_SCALE_FACTOR, VAR_QR_SIZE * DEV_VIEW_SCALE_FACTOR), resample=Image.Resampling.NEAREST)
