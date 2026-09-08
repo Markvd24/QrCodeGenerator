@@ -1,36 +1,30 @@
-import numpy as np
-from math import *
-from PIL import Image
+from __init__ import *
+
 from alphanumeric_encoding import encode_alphanumeric
-
-def extend_left(num, length):
-    x = bin(num)[2:]
-    return "0" * (length-len(x)) + x
-
-# --- VARIABLES ---
-
-# Dev Variables
-#   Version 1: 21x21, Version 2: 25x25, Version 3: 29x29 ... Version 40: 177x177
-DEV_QR_VERSION = 2
-DEV_VIEW_SCALE_FACTOR = 32
-
-# Format Info
-FORMAT_ERROR_CORRECTION_LEVEL = 'L'
-FORMAT_MASK_PATTERN = 0b001
-FORMAT_MODE_INDICATOR = 0b0010
-CHARACTER_COUNT_INDICATOR_LENGTH = 9
-
-CONTENT = "HELLO WORLD"
-
-# Program Variables
-VAR_QR_SIZE = DEV_QR_VERSION * 4 + 17
 
 QR_CODE = Image.new(mode="1", size=(VAR_QR_SIZE, VAR_QR_SIZE), color=1)
 QR_CODE_PIXELS = QR_CODE.load()
 
+#region --- STEP 1 --- Data Analysis
+
+#   Implement automatic selection of QR_CODE_MODE
+
+#endregion
 
 
-# --- PROGRAM ---
+#region --- STEP 2 --- Data Encoding
+#endregion
+
+
+#region --- STEP 3 --- Error Correction Coding
+#endregion
+
+
+#region --- STEP 4 --- Strtucture Final Message
+#endregion
+
+
+#region --- STEP 5 --- Module Placement in Matrix
 
 # Finder Pattern
 #   Top Left
@@ -57,52 +51,47 @@ for y  in range(8, VAR_QR_SIZE - 7):
 QR_CODE_PIXELS[8, VAR_QR_SIZE - 8] = 0
 
 # Alignment Patterns
-PatternLocations = {
-    1: [],
-    2: [6,18],
-    3: [6,22],
-    4: [6,26],
-    5: [6,30],
-    6: [6,34],
-    7: [6,22,38],
-    8: [6,24,42],
-    9: [6,26,46],
-    10: [6,28,50],
-    11: [6,30,54],
-    12: [6,32,58],
-    13: [6,43,62],
-    14: [6,26,46,66]
-}
+alignment_pattern_coords = alignment_pattern_coordinates[QR_CODE_VERSION]
 
-PatternCoords = PatternLocations[DEV_QR_VERSION]
-
-for x_index, x in enumerate(PatternCoords):
-    for y_index, y in enumerate(PatternCoords):
-        if (x_index == 0 or x_index == len(PatternCoords) - 1) and (y_index == 0 or y_index == len(PatternCoords) - 1) and not (x_index == len(PatternCoords) - 1 and y_index == len(PatternCoords) - 1):
+for x_index, x in enumerate(alignment_pattern_coords):
+    for y_index, y in enumerate(alignment_pattern_coords):
+        if (x_index == 0 or x_index == len(alignment_pattern_coords) - 1) and (y_index == 0 or y_index == len(alignment_pattern_coords) - 1) and not (x_index == len(alignment_pattern_coords) - 1 and y_index == len(alignment_pattern_coords) - 1):
             continue
         QR_CODE.paste(0, (x-2,y-2,x+3,y+3))
         QR_CODE.paste(1, (x-1,y-1,x+2,y+2))
         QR_CODE_PIXELS[x,y] = 0
 
-# Format Information
-format_information_coord = {
-    0: [(0,8), (8,VAR_QR_SIZE-1)],
-    1: [(1,8), (8,VAR_QR_SIZE-2)],
-    2: [(2,8), (8,VAR_QR_SIZE-3)],
-    3: [(3,8), (8,VAR_QR_SIZE-4)],
-    4: [(4,8), (8,VAR_QR_SIZE-5)],
-    5: [(5,8), (8,VAR_QR_SIZE-6)],
-    6: [(7,8), (8,VAR_QR_SIZE-7)],
-    7: [(8,8), (VAR_QR_SIZE-8,8)],
-    8: [(8,7), (VAR_QR_SIZE-7,8)],
-    9: [(8,5), (VAR_QR_SIZE-6,8)],
-    10: [(8,4), (VAR_QR_SIZE-5,8)],
-    11: [(8,3), (VAR_QR_SIZE-4,8)],
-    12: [(8,2), (VAR_QR_SIZE-3,8)],
-    13: [(8,1), (VAR_QR_SIZE-2,8)],
-    14: [(8,0), (VAR_QR_SIZE-1,8)]
-}
+#endregion
 
+
+#region --- STEP 6 --- Data Masking
+
+# Mask
+def mask(i, x, y):
+    match int(str(i), 10):
+        case 0:
+            return not ((x + y) % 2)
+        case 1:
+            return not (y % 2)
+        case 2:
+            return not (x % 3)
+        case 3:
+            return not ((x + y) % 3)
+        case 4:
+            return not ((np.floor(x/3) + np.floor(y/3)) % 2)
+        case 5:
+            return not (x * y % 2 + x * y % 3)
+        case 6:
+            return not ((x * y % 2 + x * y % 3) % 2)
+        case 7:
+            return not (((x + y) % 2 + x * y % 3) % 2)
+
+#endregion
+
+
+#region --- STEP 7 --- Format and Version Information
+
+# Format Information
 def format_string(ERROR_CORRECTION_LEVEL, MASK_PATTERN):
     format_error_correction_bin ={
         'L': 0b01,
@@ -130,34 +119,22 @@ def format_string(ERROR_CORRECTION_LEVEL, MASK_PATTERN):
 format_information_encoded = format_string(FORMAT_ERROR_CORRECTION_LEVEL, FORMAT_MASK_PATTERN)
 
 for i in range(15):
-    a, b = format_information_coord[i]
+    a, b = format_information_coordinates[i]
     QR_CODE_PIXELS[a] = int(format_information_encoded[i])
     QR_CODE_PIXELS[b] = int(format_information_encoded[i])
-
-# Mask
-def mask(i, x, y):
-    match int(str(i), 10):
-        case 0:
-            return not ((x + y) % 2)
-        case 1:
-            return not (y % 2)
-        case 2:
-            return not (x % 3)
-        case 3:
-            return not ((x + y) % 3)
-        case 4:
-            return not ((np.floor(x/3) + np.floor(y/3)) % 2)
-        case 5:
-            return not (x * y % 2 + x * y % 3)
-        case 6:
-            return not ((x * y % 2 + x * y % 3) % 2)
-        case 7:
-            return not (((x + y) % 2 + x * y % 3) % 2)
 
 # Content
 character_count_indicator = extend_left(len(CONTENT), 9)
 encoded_data = encode_alphanumeric(CONTENT)
 
+#endregion
+
+
+#region --- STEP 8 --- Display
+
 # Display
 SCALED_QR_CODE = QR_CODE.resize((VAR_QR_SIZE * DEV_VIEW_SCALE_FACTOR, VAR_QR_SIZE * DEV_VIEW_SCALE_FACTOR), resample=Image.Resampling.NEAREST)
 SCALED_QR_CODE.show()
+
+#endregion
+

@@ -1,0 +1,8 @@
+1: Data Analysis
+2: Data Encoding
+3: Error Correction Coding
+4: Strtucture Final Message
+5: Module Placement in Matrix
+6: Data Masking
+7: Format and Version Information
+8: Display
