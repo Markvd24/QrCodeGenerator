@@ -1,6 +1,11 @@
 import numpy as np
 from math import *
 from PIL import Image
+from alphanumeric_encoding import encode_alphanumeric
+
+def extend_left(num, length):
+    x = bin(num)[2:]
+    return "0" * (length-len(x)) + x
 
 # --- VARIABLES ---
 
@@ -13,6 +18,9 @@ DEV_VIEW_SCALE_FACTOR = 32
 FORMAT_ERROR_CORRECTION_LEVEL = 'L'
 FORMAT_MASK_PATTERN = 0b001
 FORMAT_MODE_INDICATOR = 0b0010
+CHARACTER_COUNT_INDICATOR_LENGTH = 9
+
+CONTENT = "HELLO WORLD"
 
 # Program Variables
 VAR_QR_SIZE = DEV_QR_VERSION * 4 + 17
@@ -146,8 +154,10 @@ def mask(i, x, y):
         case 7:
             return not (((x + y) % 2 + x * y % 3) % 2)
 
+# Content
+character_count_indicator = extend_left(len(CONTENT), 9)
+encoded_data = encode_alphanumeric(CONTENT)
 
-
-
+# Display
 SCALED_QR_CODE = QR_CODE.resize((VAR_QR_SIZE * DEV_VIEW_SCALE_FACTOR, VAR_QR_SIZE * DEV_VIEW_SCALE_FACTOR), resample=Image.Resampling.NEAREST)
 SCALED_QR_CODE.show()
