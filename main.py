@@ -223,30 +223,25 @@ integer_to_exponent = [
 
 exp_add = lambda a, b: integer_to_exponent[exponent_to_integer[a % 255] ^ exponent_to_integer[b % 255]]
 
-def generate_generator_polynomial(size):
-    # index: [a for x^size, a for x^(size-1), a for x^(size-2), ..., a for x^0]
+def generate_generator_polynomial(type):
+    # index: [a for x^type, a for x^(type-1), a for x^(type-2), ..., a for x^0]
     # So building the formula, it would be:
     # poly[0] * x^n + poly[1] * x^(n-1) + poly[2] * x^(n-2) + ... poly[n] * x^0
     
-    if size <= 1:
+    if type <= 1:
         return [0, 0]
 
-    previous_polynomial = generate_generator_polynomial(size-1)
+    previous_polynomial = generate_generator_polynomial(type-1)
 
-    # x(max)a(0) * x(1)a(0)
-    new_polynomial = [0]
+    new_polynomial = [previous_polynomial[0]]
 
-    for i in reversed(range(1, size)):
-        factor1 = previous_polynomial[i] + (size - 1) # x(i)a(old) * x(i)(new)
-        factor2 = previous_polynomial[i - 1] # x(i-1)a(n) * x(1)a(0)
+    for i in range(type-1):
+        from_x = previous_polynomial[i+1]
+        from_a = previous_polynomial[i] + type - 1
+        new_polynomial.append(exp_add(from_x, from_a))
 
-        new_polynomial.append(exp_add(factor1, factor2))
-
-    # add x(0)a(old) * x(0)a(new)
-    new_polynomial.append(previous_polynomial[size-1] + (size - 1))
-
+    new_polynomial.append(previous_polynomial[-1] + type - 1)
     return new_polynomial
-
 n_groups = 1 if len(error_correction_information) == 4 else 2
 codewords_index = 0
 
