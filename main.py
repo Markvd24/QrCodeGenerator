@@ -1,6 +1,6 @@
-import numpy as np
 from math import *
 from PIL import Image
+import numpy as np
 
 from encoding import *
 from simple_functions import extend_left
@@ -41,7 +41,7 @@ if not CONTENT.isnumeric():
         MODE_INDICATOR = 0b0100 # Bit Mode
         break
 
-character_capacity_per_version_level_mode = np.array([
+character_capacity_per_version_level_mode = [
 [[41, 25, 17], [34, 20, 14], [27, 16, 11], [17, 10, 7]],
 [[77, 47, 32], [63, 38, 26], [48, 29, 20], [34, 20, 14]],
 [[127, 77, 53], [101, 61, 42], [77, 47, 32], [58, 35, 24]],
@@ -82,7 +82,7 @@ character_capacity_per_version_level_mode = np.array([
 [[6479, 3927, 2699], [5039, 3054, 2099], [3599, 2181, 1499], [2735, 1658, 1139]],
 [[6743, 4087, 2809], [5313, 3220, 2213], [3791, 2298, 1579], [2927, 1774, 1219]],
 [[7089, 4296, 2953], [5596, 3391, 2331], [3993, 2420, 1663], [3057, 1852, 1273]],
-])
+]
 
 
 character_amount = len(CONTENT)
@@ -93,7 +93,7 @@ mode_index = MODE_INDICATOR
 
 while not FoundSmallestQR:
     for local_level_index, error_correction_level in reversed(list(enumerate(['L', 'M', 'Q', 'H']))):
-        if character_amount <= character_capacity_per_version_level_mode[version_index, local_level_index, mode_index]:
+        if character_amount <= character_capacity_per_version_level_mode[version_index][local_level_index][mode_index]:
             FoundSmallestQR = True
             level_index = local_level_index
             break
@@ -177,6 +177,7 @@ error_correction_information = error_correction_information_per_version_mode[QR_
 total_data_codewords = error_correction_information[0]
 total_data_bits = total_data_codewords * 8
 
+
 #   Add a maximum of 4 bits
 for _ in range(4):
     if len(BIT_STRING) == total_data_bits:
@@ -196,9 +197,6 @@ while len(BIT_STRING) < total_data_bits:
         BIT_STRING += extend_left(17, 8)
     TwohundredThirtySix = not TwohundredThirtySix
 
-
-for i in range(0, len(BIT_STRING), 8):
-    print(BIT_STRING[i:i+8])
 #endregion
 
 # print(f"QR_CODE_VERSION: {QR_CODE_VERSION}")
@@ -207,6 +205,70 @@ for i in range(0, len(BIT_STRING), 8):
 
 
 #region --- STEP 3 --- Error Correction Coding
+
+CODEWORDS = [BIT_STRING[i:i+8] for i in range(0, len(BIT_STRING), 8)]
+
+if len(error_correction_information) == 4:
+    GROUPS.append([[] for _ in range(EC_blocks_in_group_2)])
+    for block in range(EC_blocks_in_group_2):
+        start = block * EC_codewords_per_block_group_2 + EC_codewords_per_block_group_1 * EC_blocks_in_group_1
+        for index in range(start, start + EC_codewords_per_block_group_2):
+            GROUPS[1][block].append(CODEWORDS[index])
+
+exponent_to_integer = [
+    1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38, 76, 152, 45, 90, 180, 117, 234, 201, 143, 3, 6, 12, 24, 48, 96, 192, 157, 39, 78, 156, 37, 74, 148, 53, 106, 212, 181, 119, 238, 193, 159, 35, 70, 140, 5, 10, 20, 40, 80, 160, 93, 186, 105, 210, 185, 111, 222, 161, 95, 190, 97, 194, 153, 47, 94, 188, 101, 202, 137, 15, 30, 60, 120, 240, 253, 231, 211, 187, 107, 214, 177, 127, 254, 225, 223, 163, 91, 182, 113, 226, 217, 175, 67, 134, 17, 34, 68, 136, 13, 26, 52, 104, 208, 189, 103, 206, 129, 31, 62, 124, 248, 237, 199, 147, 59, 118, 236, 197, 151, 51, 102, 204, 133, 23, 46, 92, 184, 109, 218, 169, 79, 158, 33, 66, 132, 21, 42, 84, 168, 77, 154, 41, 82, 164, 85, 170, 73, 146, 57, 114, 228, 213, 183, 115, 230, 209, 191, 99, 198, 145, 63, 126, 252, 229, 215, 179, 123, 246, 241, 255, 227, 219, 171, 75, 150, 49, 98, 196, 149, 55, 110, 220, 165, 87, 174, 65, 130, 25, 50, 100, 200, 141, 7, 14, 28, 56, 112, 224, 221, 167, 83, 166, 81, 162, 89, 178, 121, 242, 249, 239, 195, 155, 43, 86, 172, 69, 138, 9, 18, 36, 72, 144, 61, 122, 244, 245, 247, 243, 251, 235, 203, 139, 11, 22, 44, 88, 176, 125, 250, 233, 207, 131, 27, 54, 108, 216, 173, 71, 142, 1]
+
+integer_to_exponent = [
+    0, 0, 1, 25, 2, 50, 26, 198, 3, 223, 51, 238, 27, 104, 199, 75, 4, 100, 224, 14, 52, 141, 239, 129, 28, 193, 105, 248, 200, 8, 76, 113, 5, 138, 101, 47, 225, 36, 15, 33, 53, 147, 142, 218, 240, 18, 130, 69, 29, 181, 194, 125, 106, 39, 249, 185, 201, 154, 9, 120, 77, 228, 114, 166, 6, 191, 139, 98, 102, 221, 48, 253, 226, 152, 37, 179, 16, 145, 34, 136, 54, 208, 148, 206, 143, 150, 219, 189, 241, 210, 19, 92, 131, 56, 70, 64, 30, 66, 182, 163, 195, 72, 126, 110, 107, 58, 40, 84, 250, 133, 186, 61, 202, 94, 155, 159, 10, 21, 121, 43, 78, 212, 229, 172, 115, 243, 167, 87, 7, 112, 192, 247, 140, 128, 99, 13, 103, 74, 222, 237, 49, 197, 254, 24, 227, 165, 153, 119, 38, 184, 180, 124, 17, 68, 146, 217, 35, 32, 137, 46, 55, 63, 209, 91, 149, 188, 207, 205, 144, 135, 151, 178, 220, 252, 190, 97, 242, 86, 211, 171, 20, 42, 93, 158, 132, 60, 57, 83, 71, 109, 65, 162, 31, 45, 67, 216, 183, 123, 164, 118, 196, 23, 73, 236, 127, 12, 111, 246, 108, 161, 59, 82,41, 157, 85, 170, 251, 96, 134, 177, 187, 204, 62, 90, 203, 89, 95, 176, 156, 169, 160, 81, 11, 245, 22, 235, 122, 117,44, 215, 79, 174, 213, 233, 230, 231, 173, 232, 116, 214, 244, 234, 168, 80, 88, 175]
+
+exp_add = lambda a, b: integer_to_exponent[exponent_to_integer[a % 255] ^ exponent_to_integer[b % 255]]
+
+def generate_generator_polynomial(size):
+    # index: [a for x^size, a for x^(size-1), a for x^(size-2), ..., a for x^0]
+    # So building the formula, it would be:
+    # poly[0] * x^n + poly[1] * x^(n-1) + poly[2] * x^(n-2) + ... poly[n] * x^0
+    
+    if size <= 1:
+        return [0, 0]
+
+    previous_polynomial = generate_generator_polynomial(size-1)
+
+    # x(max)a(0) * x(1)a(0)
+    new_polynomial = [0]
+
+    for i in reversed(range(1, size)):
+        factor1 = previous_polynomial[i] + (size - 1) # x(i)a(old) * x(i)(new)
+        factor2 = previous_polynomial[i - 1] # x(i-1)a(n) * x(1)a(0)
+
+        new_polynomial.append(exp_add(factor1, factor2))
+
+    # add x(0)a(old) * x(0)a(new)
+    new_polynomial.append(previous_polynomial[size-1] + (size - 1))
+
+    return new_polynomial
+
+n_groups = 1 if len(error_correction_information) == 4 else 2
+codewords_index = 0
+
+ERROR_CORRECTION_CODEWORDS = []
+
+for group in range(n_groups):
+    # obtain group specs
+    blocks_in_group = error_correction_information[2 * group]
+    codewords_per_block = error_correction_information[2 * group + 1]
+    
+    GROUP = []
+
+    generator_polynomial = generate_generator_polynomial(codewords_per_block)
+
+    for block in range(blocks_in_group):
+        message_polynomial = [CODEWORDS[codewords_index + cw] for cw in range(codewords_per_block)]
+        codewords_index += codewords_per_block
+
+
+
+
+
 #endregion
 
 
