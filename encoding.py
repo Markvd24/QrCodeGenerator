@@ -85,8 +85,8 @@ def encode_bit(text):
 
     for char in text:
         hex_value = char.encode('iso-8859-1').hex()
+        
+        # print(f"{char.encode('iso-8859-1')}: {hex_value}")
         encoded_text.append(extend_left(int(hex_value, 16), 8))
 
     return encoded_text
-
-print(encode_bit('Hello, world!'))
