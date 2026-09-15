@@ -2,5 +2,6 @@
     "github.copilot.enable": {
         "*": false
     },
+    "explorer.sortOrder": "type",
     "python.REPL.enableREPLSmartSend": false
 }   

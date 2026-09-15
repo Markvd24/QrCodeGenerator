@@ -2,8 +2,113 @@ from math import *
 from PIL import Image
 import numpy as np
 
-from encoding import *
-from simple_functions import extend_left
+
+def create_byte(value:int, byte_size:int=8) -> str:
+    return bin(value)[2:].zfill(byte_size)
+
+def zip_array(array: list[list]):
+    zipped_array = []
+    max_length = max([len(a) for a in array])
+    for index in range(max_length):
+        for list in array:
+            if len(list) <= index:
+                continue
+            zipped_array.append(list[index])
+    return zipped_array
+
+
+def encode_numeric(text):
+    encoded_text = []
+
+    for index in range(3, len(text), 3):
+        number = int(text[index-3:index])
+        encoded_text.append(create_byte(number, 10))
+
+    amount_extra = len(text)%3
+    match amount_extra:
+        case 1:
+            number = int(text[-1])
+            encoded_text.append(create_byte(number, 4))
+        case 2:
+            number = int(text[-2:])
+            encoded_text.append(create_byte(number, 7))
+
+    return encoded_text
+
+
+def encode_alphanumeric(text):
+    alphanumeric_table = {
+        '0': 0,
+        '1': 1,
+        '2': 2,
+        '3': 3,
+        '4': 4,
+        '5': 5,
+        '6': 6,
+        '7': 7,
+        '8': 8,
+        '9': 9,
+        'A': 10,
+        'B': 11,
+        'C': 12,
+        'D': 13,
+        'E': 14,
+        'F': 15,
+        'G': 16,
+        'H': 17,
+        'I': 18,
+        'J': 19,
+        'K': 20,
+        'L': 21,
+        'M': 22,
+        'N': 23,
+        'O': 24,
+        'P': 25,
+        'Q': 26,
+        'R': 27,
+        'S': 28,
+        'T': 29,
+        'U': 30,
+        'V': 31,
+        'W': 32,
+        'X': 33,
+        'Y': 34,
+        'Z': 35,
+        ' ': 36,
+        '$': 37,
+        '%': 38,
+        '*': 39,
+        '+': 40,
+        '-': 41,
+        '.': 42,
+        '/': 43,
+        ':': 44
+    }
+
+    encoded_text = []
+
+    for i in range(0, len(text)-1, 2):
+        char1 = alphanumeric_table[text[i]]
+        char2 = alphanumeric_table[text[i+1]]
+        char_sum = 45 * char1 + char2
+        encoded_text.append(create_byte(char_sum,11))
+
+    if len(text)%2 == 1:
+        encoded_text.append(create_byte(alphanumeric_table[text[-1]],6))
+
+    return encoded_text
+
+
+def encode_bit(text):
+    encoded_text = []
+
+    for char in text:
+        hex_value = char.encode('iso-8859-1').hex()
+        
+        # print(f"{char.encode('iso-8859-1')}: {hex_value}")
+        encoded_text.append(create_byte(int(hex_value, 16), 8))
+
+    return encoded_text
 
 
 #region --- INIT VARIABLES ---
@@ -182,7 +287,7 @@ ERROR_CORRECTION_LEVEL = ['L', 'M', 'Q', 'H'][level_index]
 #region --- STEP 2 --- Data Encoding
 
 CHARACTER_COUNT_INDICATOR_LENGTH = [[10, 9, 8], [12, 11, 16], [14, 13, 16]][floor((QR_CODE_VERSION + 7) / 17)][floor(np.log2(MODE_INDICATOR))]
-CHARACTER_COUNT_INDICATOR = extend_left(len(CONTENT), CHARACTER_COUNT_INDICATOR_LENGTH)
+CHARACTER_COUNT_INDICATOR = create_byte(len(CONTENT), CHARACTER_COUNT_INDICATOR_LENGTH)
 
 if MODE_INDICATOR == 0b0001:
     ENCODED_DATA = encode_numeric(CONTENT)
@@ -196,7 +301,7 @@ else:
 print(MODE_INDICATOR)
 print(CHARACTER_COUNT_INDICATOR)
 
-BIT_STRING = extend_left(MODE_INDICATOR, 4) + CHARACTER_COUNT_INDICATOR + ''.join(ENCODED_DATA)
+BIT_STRING = create_byte(MODE_INDICATOR, 4) + CHARACTER_COUNT_INDICATOR + ''.join(ENCODED_DATA)
 
 
 #   [total number of data words, EC codewords per block, number of blocks in group 1, number of codewords in each group 1 block, number of blocks in group 2, number of codewords in each group 2 block]
@@ -263,9 +368,9 @@ while len(BIT_STRING) % 8 != 0:
 TwohundredThirtySix = True
 while len(BIT_STRING) < total_data_bits:
     if TwohundredThirtySix:
-        BIT_STRING += extend_left(236, 8)
+        BIT_STRING += create_byte(236, 8)
     else:
-        BIT_STRING += extend_left(17, 8)
+        BIT_STRING += create_byte(17, 8)
     TwohundredThirtySix = not TwohundredThirtySix
 
 #endregion
