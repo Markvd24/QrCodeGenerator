@@ -348,8 +348,6 @@ class QrCodeMessageGenerator:
 
         self.bitString = ""
 
-        
-
     @property
     def characterCountIndicator(self) -> str:
         def counter_value(self):
@@ -363,7 +361,6 @@ class QrCodeMessageGenerator:
         value = counter_value(self)
         length = counter_length(self)
         return create_byte(value, length)
-
 
     def generateBitString(self):
         encodedContent = self.dataType.encode(self.content)
@@ -434,6 +431,8 @@ class QrCode:
         self.errorCorrection = ErrorCorrection(_errorCorrectionMode, self.version, self.dataType)
         self.content = _content
 
+        self.message = ""
+
     @classmethod
     def New(cls, _content:str, _version:int = 0, _errorCorrectionMode:str = '') -> QrCode:           
         
@@ -478,8 +477,9 @@ class QrCode:
         return cls(version, errorCorrectionMode, dataType.dataType, content)
 
     def Generate(self):
-        message = QrCodeMessageGenerator(self).Generate()
-        print(message)
+        self.message = QrCodeMessageGenerator(self).Generate()
+        print(self.message)
+
     
     def __str__(self) -> str:
         return f"version: {self.version}, " + f"errorCorrectionMode: {self.errorCorrection}, " + f"dataType: {self.dataType}, " + f"content: {self.content}"
