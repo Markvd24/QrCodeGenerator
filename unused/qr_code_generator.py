@@ -6,16 +6,6 @@ import numpy as np
 def create_byte(value:int, byte_size:int=8) -> str:
     return bin(value)[2:].zfill(byte_size)
 
-def zip_array(array: list[list]):
-    zipped_array = []
-    max_length = max([len(a) for a in array])
-    for index in range(max_length):
-        for list in array:
-            if len(list) <= index:
-                continue
-            zipped_array.append(list[index])
-    return zipped_array
-
 
 def encode_numeric(text):
     encoded_text = []
@@ -185,12 +175,12 @@ Please don't make me do this, don't make me do this
 The blood on your hands is something you won't lose
 All you can choose is whose"""
 
-CONTENT = "Banaantje"
+CONTENT = "abcdefhijklnopqrstuvwxyz"
 
 FORCE_FORMAT = 0
-QR_CODE_VERSION = 1
+QR_CODE_VERSION = 2
 ERROR_CORRECTION_LEVEL = 0
-MASK_PATTERN = 0
+MASK_PATTERN = 4
 
 # CONTENT = input("What is the content? ")
 
@@ -721,7 +711,7 @@ def mask(i, x, y):
         case 3:
             return not ((x + y) % 3)
         case 4:
-            return not ((np.floor(x/3) + np.floor(y/3)) % 2)
+            return not ((np.floor(x/3) + np.floor(y/2)) % 2)
         case 5:
             return not ((x * y) % 2 + (x * y) % 3)
         case 6:
@@ -898,6 +888,8 @@ def format_string(ERROR_CORRECTION_LEVEL, MASK_PATTERN):
     format_information_encoded ^= format_information_mask
 
     return bin(format_information_encoded)[2:].zfill(15)
+
+print(format_string('M', 4))
 
 format_information_encoded = format_string(ERROR_CORRECTION_LEVEL, MASK_PATTERN)
 

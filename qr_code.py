@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PIL import Image
 import numpy as np
-from math import floor
+from math import floor, ceil
 from simple_functions import create_byte, zip_array
 from constants import *
 
@@ -31,38 +31,15 @@ class Colors:
             self.color_message = self.black
 
 class Analyze:
-    character_capacity_per_type_level_version = [
-        [[41, 77, 127, 187, 255, 322, 370, 461, 552, 652, 772, 883, 1022, 1101, 1250, 1408, 1548, 1725, 1903, 2061, 2232, 2409, 2620, 2812, 3057, 3283, 3517, 3669, 3909, 4158, 4417, 4686, 4965, 5253, 5529, 5836, 6153, 6479, 6743, 7089],
-        [34, 63, 101, 149, 202, 255, 293, 365, 432, 513, 604, 691, 796, 871, 991, 1082, 1212, 1346, 1500, 1600, 1708, 1872, 2059, 2188, 2395, 2544, 2701, 2857, 3035, 3289, 3486, 3693, 3909, 4134, 4343, 4588, 4775, 5039, 5313, 5596],
-        [27, 48, 77, 111, 144, 178, 207, 259, 312, 364, 427, 489, 580, 621, 703, 775, 876, 948, 1063, 1159, 1224, 1358, 1468, 1588, 1718, 1804, 1933, 2085, 2181, 2358, 2473, 2670, 2805, 2949, 3081, 3244, 3417, 3599, 3791, 3993],
-        [17, 34, 58, 82, 106, 139, 154, 202, 235, 288, 331, 374,427, 468, 530, 602, 674, 746, 813, 919, 969, 1056, 1108, 1228, 1286, 1425, 1501, 1581, 1677, 1782, 1897, 2022, 2157, 2301, 2361, 2524, 2625, 2735, 2927, 3057]
-        ],
-        [[25, 47, 77, 114, 154, 195, 224, 279, 335, 395, 468, 535, 619, 667, 758, 854, 938, 1046, 1153, 1249, 1352, 1460, 1588, 1704, 1853, 1990, 2132, 2223, 2369, 2520, 2677, 2840, 3009, 3183, 3351, 3537, 3729, 3927, 4087, 4296],
-        [20, 38, 61, 90, 122, 154, 178, 221, 262, 311, 366, 419, 483, 528, 600, 656, 734, 816, 909, 970, 1035, 1134, 1248, 1326, 1451, 1542, 1637, 1732, 1839, 1994, 2113, 2238, 2369, 2506, 2632, 2780, 2894, 3054, 3220, 3391],
-        [16, 29, 47, 67, 87, 108, 125, 157, 189, 221, 259, 296, 352, 376, 426, 470, 531, 574, 644, 702, 742, 823, 890, 963, 1041, 1094, 1172, 1263, 1322, 1429, 1499, 1618, 1700, 1787, 1867, 1966, 2071, 2181, 2298, 2420],
-        [10, 20, 35, 50, 64, 84, 93, 122, 143, 174, 200, 227, 259, 283, 321, 365, 408, 452, 493, 557, 587, 640, 672, 744, 779, 864, 910, 958, 1016, 1080, 1150, 1226, 1307, 1394, 1431, 1530, 1591, 1658, 1774, 1852]
-        ],
-        [[17, 32, 53, 78, 106, 134, 154, 192, 230, 271, 321, 367, 425, 458, 520, 586, 644, 718, 792, 858, 929, 1003, 1091, 1171, 1273, 1367, 1465, 1528, 1628, 1732, 1840, 1952, 2068, 2188, 2303, 2431, 2563, 2699, 2809, 2953],
-        [14, 26, 42, 62, 84, 106, 122, 152, 180, 213, 251, 287, 331, 362, 412, 450, 504, 560, 624, 666, 711, 779, 857, 911, 997, 1059, 1125, 1190, 1264, 1370, 1452, 1538, 1628, 1722, 1809, 1911, 1989, 2099, 2213, 2331],
-        [11, 20, 32, 46, 60, 74, 86, 108, 130, 151, 177, 203, 241, 258, 292, 322, 364, 394, 442, 482, 509, 565, 611, 661, 715, 751, 805, 868, 908, 982, 1030, 1112, 1168, 1228, 1283, 1351, 1423, 1499, 1579, 1663],
-        [7, 14, 24, 34, 44, 58, 64, 84, 98, 119, 137, 155, 177, 194, 220, 250, 280, 310, 338, 382, 403, 439, 461, 511, 535, 593, 625, 658, 698, 742, 790, 842, 898, 958, 983, 1051, 1093, 1139, 1219, 1273]
-        ]
-    ]
-
     def __init__(self, content:str, version:int, errorCorrectionMode):
         self.content = content
         self.version = version
         self.errorCorrectionMode = errorCorrectionMode
 
+        self.versionIsFixed = (version != 0)
+        self.errorCorrectionModeIsFixed = (errorCorrectionMode != '')
+
         self.character_count = len(self.content)
-
-    @property
-    def versionIsFixed(self):
-        return (self.version != 0)
-
-    @property
-    def errorCorrectionModeIsFixed(self):
-        return (self.errorCorrectionMode != '')
 
     @property
     def minimalErrorCorrectionIndex(self):
@@ -71,12 +48,12 @@ class Analyze:
         return ['L', 'M', 'Q', 'H'].index(self.errorCorrectionMode)
 
     def versionToSmall(self, version_index:int) -> bool:
-        version_size = self.character_capacity_per_type_level_version[self.dataTypeIndex][self.minimalErrorCorrectionIndex][version_index]
+        version_size = character_capacity_per_mode_level_version[self.dataTypeIndex][self.minimalErrorCorrectionIndex][version_index]
         return (self.character_count > version_size)
 
     def errorCorrectionToHigh(self, error_correction_index) -> bool:
-        error_correction_size = self.character_capacity_per_type_level_version[self.dataTypeIndex][error_correction_index][self.version - 1]
-        return (self.character_count < error_correction_size)
+        error_correction_size = character_capacity_per_mode_level_version[self.dataTypeIndex][error_correction_index][self.version - 1]
+        return (self.character_count > error_correction_size)
 
     def findDataType(self):
         if self.content.isnumeric():
@@ -224,7 +201,6 @@ class DataType:
         for char in text:
             hex_value = char.encode('iso-8859-1').hex()
             
-            # print(f"{char.encode('iso-8859-1')}: {hex_value}")
             encoded_text.append(create_byte(int(hex_value, 16), 8))
 
         return encoded_text
@@ -249,6 +225,8 @@ class MessageGenerator:
         self.errorCorrection:ErrorCorrection = _qrCode.errorCorrection
         self.content:str = _qrCode.content
 
+        self.totalDataBits = self.errorCorrection.totalDataCodewords * 8
+
         self.bitString:str = ""
 
     def _characterCounterValue(self):
@@ -272,27 +250,28 @@ class MessageGenerator:
 
     def _extendWithMax4(self):
         for _ in range(4):
-            if len(self.bitString) == self.total_data_bits:
+            if len(self.bitString) >= self.totalDataBits:
                 return
             self.bitString += '0'
     
     def _extendTillMultipleOf8(self):
-        while len(self.bitString) % 8 != 0:
-            self.bitString += '0'
+        lastByteSize = len(self.bitString) % 8
+        if lastByteSize == 0:
+            return
+        
+        extraBitsNeeded = 8 - lastByteSize
+        self.bitString += '0' * extraBitsNeeded
     
     def _extendWithFillerNumbers(self):
-        TwohundredThirtySix = True
-
-        while len(self.bitString) < self.total_data_bits:
-            if TwohundredThirtySix:
+        TwoHundredThirtySix = True
+        while len(self.bitString) < self.totalDataBits:
+            if TwoHundredThirtySix:
                 self.bitString += create_byte(236, 8)
             else:
                 self.bitString += create_byte(17, 8)
-            TwohundredThirtySix = not TwohundredThirtySix
+            TwoHundredThirtySix = not TwoHundredThirtySix
 
     def extendBitString(self):
-        self.total_data_bits = self.errorCorrection.error_correction_information[0] * 8
-
         self._extendWithMax4()
         self._extendTillMultipleOf8()
         self._extendWithFillerNumbers()
@@ -300,8 +279,6 @@ class MessageGenerator:
 
     def generateErrorCorrection(self):
         self.dataCodewords, self.errorCorrectionCodewords = self.errorCorrection.generateErrorCorrectionCodewords(self.bitString)
-        print("".join(["".join([create_byte(b) for b in l]) for l in self.dataCodewords]))
-        print("".join(["".join([create_byte(b) for b in l]) for l in self.errorCorrectionCodewords]))
         
     def structureMessage(self):
         self.zipCodewords()
@@ -336,7 +313,6 @@ class Img:
         self.errorCorrection:ErrorCorrection = _qrCode.errorCorrection
         self.content:str = _qrCode.content
 
-        self.mask:int = _qrCode.mask
         self.message:str = _qrCode.message
         
         self.colors = Colors()
@@ -423,7 +399,7 @@ class Img:
                     return False
 
         # Version Information Area
-        if self.version < 7:
+        if not self.hasVersionInformation:
             return True
 
         dist_to_corners = [self.max_step_dist([x, y], corner) for corner in [[0, self.qrPixels-6], [self.qrPixels-6, 0]]]
@@ -484,25 +460,25 @@ class Img:
     def maskFormula(i, x, y):
         match i:
             case 0:
-                return not ((x + y) % 2)
+                return ((x + y) % 2 == 0)
             case 1:
-                return not (y % 2)
+                return (y % 2 == 0)
             case 2:
-                return not (x % 3)
+                return (x % 3 == 0)
             case 3:
-                return not ((x + y) % 3)
+                return ((x + y) % 3 == 0)
             case 4:
-                return not ((floor(x/3) + floor(y/3)) % 2)
+                return ((floor(x/3) + (floor(y/2)) % 2) == 0)
             case 5:
-                return not ((x * y) % 2 + (x * y) % 3)
+                return (((x * y) % 2) + ((x * y) % 3) == 0)
             case 6:
-                return not (((x * y) % 2 + (x * y) % 3) % 2)
+                return ((((x * y) % 2) + ((x * y) % 3)) % 2 == 0)
             case 7:
-                return not (((x + y) % 2 + (x * y) % 3) % 2)
+                return ((((x + y) % 2) + ((x * y) % 3)) % 2 == 0)
             
-    def maskBit(self, x, y):
+    def maskBit(self, x, y, mask):
         bit = 0 if self.image.getpixel((x,y)) == self.colors.background else 1
-        if self.is_data_or_ec(x,y) and self.maskFormula(self.mask, x, y):
+        if self.is_data_or_ec(x,y) and self.maskFormula(mask, x, y):
             return 1-bit
         return bit
 
@@ -510,19 +486,19 @@ class Img:
     def sign(x):
         return 1 if x>0 else -1
 
-    def applyMask(self):
+    def applyMask(self, mask):
         for x in range(self.qrPixels):
             for y in range(self.qrPixels):
                 if self.is_data_or_ec(x, y):
-                    self.image.putpixel((x,y), self.colors.color_message if self.maskBit(x, y) == 0 else self.colors.background)
+                    self.image.putpixel((x,y), self.colors.color_message if self.maskBit(x, y, mask) == 0 else self.colors.background)
     
 
     # Format Information
-    def format_string(self):
+    def generateFormatString(self, mask):
         generator = 0b10100110111
         format_information_mask = 0b101010000010010
 
-        format_information = (self.errorCorrection.format_information_bits << 3) | self.mask
+        format_information = (self.errorCorrection.format_information_bits << 3) | mask
 
         format_information_error_correction = format_information << 10
 
@@ -533,9 +509,9 @@ class Img:
         format_information_encoded = (format_information << 10) | format_information_error_correction
         format_information_encoded ^= format_information_mask
 
-        return create_byte(format_information_encoded, 15)
+        self.formatString = create_byte(format_information_encoded, 15)
 
-    def placeFormatInformation(self):
+    def placeFormatInformation(self, mask):
         format_information_coordinates = {
             0: [(0,8), (8,self.qrPixels-1)],
             1: [(1,8), (8,self.qrPixels-2)],
@@ -553,43 +529,258 @@ class Img:
             13: [(8,1), (self.qrPixels-2,8)],
             14: [(8,0), (self.qrPixels-1,8)]
         }
-        format_information_encoded = self.format_string()
+
+        self.generateFormatString(mask)
 
         for i in range(15):
             a, b = format_information_coordinates[i]
-            self.image.putpixel(b, self.colors.color_format_information if format_information_encoded[i] == "1" else self.colors.background)
-            self.image.putpixel(a, self.colors.color_format_information if format_information_encoded[i] == "1" else self.colors.background)
+            self.image.putpixel(b, self.colors.color_format_information if self.formatString[i] == "1" else self.colors.background)
+            self.image.putpixel(a, self.colors.color_format_information if self.formatString[i] == "1" else self.colors.background)
 
-    def finish(self):
-        self.applyMask()
-        self.placeFormatInformation()
+    @property
+    def hasVersionInformation(self) -> bool:
+        return (self.version >= 7)
+
+    def placeVersionInformation(self):
+        if not self.hasVersionInformation:
+            return
+
+        version_information_string_dict = {
+            7: "000111110010010100",
+            8: "001000010110111100",
+            9: "001001101010011001",
+            10: "001010010011010011",
+            11: "001011101111110110",
+            12: "001100011101100010",
+            13: "001101100001000111",
+            14: "001110011000001101",
+            15: "001111100100101000",
+            16: "010000101101111000",
+            17: "010001010001011101",
+            18: "010010101000010111",
+            19: "010011010100110010",
+            20: "010100100110100110",
+            21: "010101011010000011",
+            22: "010110100011001001",
+            23: "010111011111101100",
+            24: "011000111011000100",
+            25: "011001000111100001",
+            26: "011010111110101011",
+            27: "011011000010001110",
+            28: "011100110000011010",
+            29: "011101001100111111",
+            30: "011110110101110101",
+            31: "011111001001010000",
+            32: "100000100111010101",
+            33: "100001011011110000",
+            34: "100010100010111010",
+            35: "100011011110011111",
+            36: "100100101100001011",
+            37: "100101010000101110",
+            38: "100110101001100100",
+            39: "100111010101000001",
+            40: "101000110001101001"
+        }
+
+        version_information_string = version_information_string_dict[self.version]
+
+        bottom_start_x = 0
+        bottom_start_y = self.qrPixels - 11
+    
+        for dx in range(6):
+            for dy in range(3):
+                index = 17 - dx * 3 - dy
+                self.image.putpixel((bottom_start_x + dx, bottom_start_y + dy), self.colors.color_format_information if version_information_string[index] == '1' else self.colors.background)
+    
+        right_start_x = self.qrPixels - 11
+        right_start_y = 0
+    
+        for dy in range(6):
+            for dx in range(3):
+                index = 17 - dy * 3 - dx
+                self.image.putpixel((right_start_x + dx, right_start_y + dy), self.colors.color_format_information if version_information_string[index] == '1' else self.colors.background)
+
+    def addPadding(self):
+        qrCodePadded = Image.new(self.image.mode, (self.qrPixels + 8, self.qrPixels + 8), self.colors.background)
+        qrCodePadded.paste(self.image, (4, 4))
+        self.image = qrCodePadded
+
+    @property
+    def imageScaleFactor(self):
+        return ceil(MINIMUM_IMAGE_SIZE / self.qrPixels)
+
+    def addScaling(self):
+        scaledSize = (self.qrPixels + 8) * self.imageScaleFactor
+        self.image = self.image.resize((scaledSize, scaledSize), resample=Image.Resampling.NEAREST)
+
+    def addPaddingAndScale(self):
+        self.addPadding()
+        self.addScaling()
+
+
+    def finish(self, mask):
+        self.applyMask(mask)
+        self.placeFormatInformation(mask)
+        self.placeVersionInformation()
+        self.addPaddingAndScale()
 
     def show(self):
-        PADDED_QR_CODE = Image.new(self.image.mode, (self.qrPixels + 8, self.qrPixels + 8), self.colors.background)
-        PADDED_QR_CODE.paste(self.image, (4, 4))
-        PADDED_QR_CODE.show()
+        self.image.show()
     
+class Evaluate:
+    def __init__(self, image:Img):
+        self.image = image
+        self.evaluation_1 = [0 for _ in range(8)]
+        self.evaluation_2 = [0 for _ in range(8)]
+        self.evaluation_3 = [0 for _ in range(8)]
+        self.evaluation_4 = [0 for _ in range(8)]
+
+        self.mask = 0
+        self.evaluations = [0 for _ in range(8)]
+
+    def getMaskedBit(self, x, y):
+        bit = self.image.maskBit(x, y, mask=self.mask)
+        return (bit == 1)
+
+    def updatePointsEvaluation1(self):
+        if self.count == 5:
+            self.evaluation_1[self.mask] += 3
+        elif self.count > 5:
+            self.evaluation_1[self.mask] += 1
+
+    def nextSegment(self):
+        self.startState = not self.startState
+        self.count = 1
+    
+    def longSegmentTileScript(self, x:int, y:int):
+        if self.startState == self.getMaskedBit(x, y):
+            self.count += 1
+            self.updatePointsEvaluation1()
+        else:
+            self.nextSegment()
+            
+    def scanColumnForLongSegments(self, y:int):
+        self.startState = self.getMaskedBit(0,y)
+        self.count = 1
+
+        for x in range(1, self.image.qrPixels):
+            self.longSegmentTileScript(x, y)
+
+    def scanRowForLongSegments(self, x:int):
+        self.startState = self.getMaskedBit(x,0)
+        self.count = 1
+
+        for y in range(1, self.image.qrPixels):
+            self.longSegmentTileScript(x, y)
+
+    def scanTileForBlock(self, x:int, y:int):
+        if x == 0 or y == 0:
+            return
+
+        if self.getMaskedBit(x, y) == self.getMaskedBit(x, y-1) == self.getMaskedBit(x-1, y) == self.getMaskedBit(x-1, y-1):
+            self.evaluation_2[self.mask] += 3
+
+    def scanSequence(self, x:int, y:int, sequence:int):
+        sequencesFound = 0
+        if x >= 10:
+            sequencesFound += 1
+            for dx in range(11):
+                X = x - dx
+                pattern = (sequence & (1 << dx) != 0)
+                if not self.getMaskedBit(X,y) == pattern:
+                    sequencesFound -= 1
+                    break
+
+        if y >= 10:
+            sequencesFound += 1
+            for dy in range(11):
+                Y = y - dy
+                pattern = (sequence & (1 << dy) != 0)
+                if not self.getMaskedBit(x,Y) == pattern:
+                    sequencesFound -= 1
+                    break
+
+        self.evaluation_3[self.mask] += 40 * sequencesFound
+             
+    def scanTileForSequence(self, x:int, y:int):
+        self.scanSequence(x, y, 0b00001011101)
+        self.scanSequence(x, y, 0b10111010000)
+
+    def scanTileIfBlackTile(self, x:int, y:int):
+        if self.getMaskedBit(x, y):
+            self.evaluation_4[self.mask] += 1
+
+    def scan(self):
+        for x in range(self.image.qrPixels):
+            self.scanRowForLongSegments(x)
+
+            for y in range(self.image.qrPixels):
+                if x == 0:
+                    self.scanColumnForLongSegments(y)
+
+                self.scanTileForBlock(x, y)
+                self.scanTileForSequence(x, y)
+                self.scanTileIfBlackTile(x, y)
+
+    def calculateEvaluation4(self):
+        totalSize = self.image.qrPixels ** 2
+        blackPixels = self.evaluation_4[self.mask]
+        whitePixels = totalSize - blackPixels
+
+        percent = (blackPixels * 20) / whitePixels
+
+        upper = ceil(percent) * 5
+        lower = floor(percent) * 5
+
+        first = abs(upper - 50) / 5
+        second = abs(lower - 50) / 5
+
+        value = min(first, second)
+
+        self.evaluation_4[self.mask] = int(value) * 10
+
+    def calculateEvaluations(self):
+        self.calculateEvaluation4()
+
+        self.evaluations[self.mask] += self.evaluation_1[self.mask]
+        self.evaluations[self.mask] += self.evaluation_2[self.mask]
+        self.evaluations[self.mask] += self.evaluation_3[self.mask]
+        self.evaluations[self.mask] += self.evaluation_4[self.mask]
+
+    def evaluateMask(self):
+        self.scan()        
+        self.calculateEvaluations()
+
+    def getBestMask(self):
+        self.image.placeVersionInformation()
+
+        for maskIndex in range(8):
+            self.mask = maskIndex
+
+            self.image.placeFormatInformation(maskIndex)
+            self.evaluateMask()
+
+        return self.evaluations.index(min(self.evaluations))
 
 class QrCode:
     def __init__(self, _version:int, _errorCorrectionMode:str, _dataTypeIndex:int, _content:str, _mask:int) -> None:
         self.version = _version
         self.dataType = DataType(_dataTypeIndex)
-        self.errorCorrection = ErrorCorrection(_errorCorrectionMode, self.version, self.dataType)
+        self.errorCorrection = ErrorCorrection(_errorCorrectionMode, _version)
         self.content = _content
         self.mask = _mask
 
         self.message = ""
 
-        self.image:Img = None
-        
+        self.image:Img 
 
     @classmethod
-    def New(cls, content:str, inVersion:int = 0, inErrorCorrectionMode:str = '', mask:int = -1) -> QrCode:           
+    def New(cls, content:str, inVersion:int = 0, inErrorCorrectionMode:str = '', inMask:int = -1) -> QrCode:           
         Analyzer = Analyze(content, inVersion, inErrorCorrectionMode)
 
         dataTypeIndex, version, errorCorrectionMode = Analyzer.find()
         
-        return cls(version, errorCorrectionMode, dataTypeIndex, content, mask)
+        return cls(version, errorCorrectionMode, dataTypeIndex, content, inMask)
 
     def generateMessage(self):
         self.message = MessageGenerator(self).Generate()
@@ -597,30 +788,35 @@ class QrCode:
     def generateUnmaskedImg(self):
         self.image = Img(self)
         self.image.build()
-        
     
     def testMasks(self):
-        ...
+        if self.mask != -1:
+            return
+        Evaluation = Evaluate(self.image)
+        self.mask = Evaluation.getBestMask()
 
     def finishImg(self):
-        self.image.finish()
+        self.image.finish(self.mask)
 
     def Generate(self):
         self.generateMessage()
         self.generateUnmaskedImg()
         self.testMasks()
         self.finishImg()
-        self.image.show()
+    
+    def save(self, file_name:str):
+        self.image.image.save(file_name)
 
     
     def __str__(self) -> str:
-        return f"version: {self.version}, " + f"errorCorrectionMode: {self.errorCorrection}, " + f"dataType: {self.dataType}, " + f"content: {self.content}"
+        return f"version: {self.version}, " + f"errorCorrectionMode: {self.errorCorrection}, " + f"dataType: {self.dataType}, " + f"content: {self.content}, " + f"mask: {self.mask}"
 
     
 
 def main():
-    qr = QrCode.New("Banaantje")
+    qr = QrCode.New("HELLO WORLD")
     qr.Generate()
+    qr.image.show()
     print(qr)
 
 if __name__ == "__main__":

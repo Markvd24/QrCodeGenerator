@@ -79,9 +79,14 @@ def polynomial_long_devision(in_message_polynomial, generator_polynomial):
     out_message_polynomial = in_message_polynomial
     
     # Step 2: Multiply the Message Polynomial by x^n where n is the number of codewords
-    out_message_polynomial = out_message_polynomial + [0 for _ in range(len(generator_polynomial)-1)]
+    out_message_polynomial = out_message_polynomial + [0 for _ in range(len(generator_polynomial) - 1)]
 
     for _ in in_message_polynomial:
+        # Skip if first value is 0
+        if out_message_polynomial[0] == 0:
+            out_message_polynomial.pop(0)
+            continue
+
         # Multiply the Generator Polynomial by the Lead Term of the Message Polynomial
         leading_term = integer_to_exponent[out_message_polynomial[0]]
         multiplied_generator = exp_to_int([(term + leading_term) % 255 for term in generator_polynomial])
@@ -90,24 +95,24 @@ def polynomial_long_devision(in_message_polynomial, generator_polynomial):
         for index, generator_term in enumerate(multiplied_generator):
             out_message_polynomial[index] ^= generator_term
 
-        if out_message_polynomial[0] == 0:
-            out_message_polynomial.pop(0)     
+        out_message_polynomial.pop(0)
 
     return out_message_polynomial
 
 class ErrorCorrection:
     INDEX_TABLE = ['L', 'M', 'Q', 'H']
 
-    def __init__(self, errorCorrectionMode, _version, _dataType) -> None:
+    def __init__(self, errorCorrectionMode, _version) -> None:
         if isinstance(errorCorrectionMode, int):
             errorCorrectionMode = self.INDEX_TABLE[errorCorrectionMode]
         self.errorCorrectionMode = errorCorrectionMode
 
-        self.error_correction_information = error_correction_information_per_version_mode[_version - 1][_dataType.index]
+        self.error_correction_information = error_correction_information_per_version_mode[_version - 1][self.index]
+        self.totalDataCodewords = self.error_correction_information[0]
         self.nGroups = 1 if len(self.error_correction_information) == 4 else 2
-        self.codewordsPerBlock = self.error_correction_information[1]
+        self.errorCorrectionCodewordsPerBlock = self.error_correction_information[1]
 
-        self.generator_polynomial = generate_generator_polynomial(self.codewordsPerBlock)
+        self.generator_polynomial = generate_generator_polynomial(self.errorCorrectionCodewordsPerBlock)
 
         self.dataCodewords = []
         self.errorCorrectionCodewords = []
@@ -125,7 +130,7 @@ class ErrorCorrection:
         return self.errorCorrectionMode
 
     def addNextMessagePolynomial(self):
-        # Obtain the message polynomial from CODEWORDS
+        # Obtain the message polynomial from rawDataCodewords
         message_polynomial_binary = [self.rawDataCodewords[self.codewordsIndex + cw] for cw in range(self.codewords_per_block)]
         self.codewordsIndex += self.codewords_per_block
 
@@ -149,6 +154,7 @@ class ErrorCorrection:
         for groupIndex in range(self.nGroups):
             self.addNextGroup(groupIndex)
 
+
     def _generateErrorCorrectionCodewords(self):
         for message_polynomial in self.dataCodewords:
             # Calculate the polynomial long devision of message_polynomial and generator_polynomial
@@ -160,4 +166,9 @@ class ErrorCorrection:
         self._generateDataCodewords(bitString)
         self._generateErrorCorrectionCodewords()
         return self.dataCodewords, self.errorCorrectionCodewords
-    
+
+def main():
+    polynomial_long_devision([65, 182, 22, 38, 54, 70, 86, 102, 118, 134, 150, 166, 182, 198, 214, 230, 247, 7, 23, 39, 55, 71, 87, 103, 119, 135, 151, 166, 16, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236, 17, 236], generate_generator_polynomial(26))
+
+if __name__ == "__main__":
+    main()

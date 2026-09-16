@@ -105,16 +105,18 @@ list = [
 [[7089, 4296, 2953], [5596, 3391, 2331], [3993, 2420, 1663], [3057, 1852, 1273]],
 ]
 
-A = len(list)
-B = 4
-C = 3
+V = len(list)
+E = 4
+M = 3
 
-new_list = [[[] for _ in range(B)] for _ in range(C)]
+new_list = [[[] for _ in range(E)] for _ in range(M)]
 
-for c in range(C):
-    for b in range(B):
-        for a in range(A):
-            new_list[c][b].append(list[a][b][c])
+for m in range(M):
+    for e in range(E):
+        for v in range(V):
+            new_list[m][e].append(list[v][e][m])
 
 for l in new_list:
     print(l)
+
+print(new_list[1][2][13])
