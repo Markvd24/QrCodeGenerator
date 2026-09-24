@@ -1,0 +1,3 @@
+# Checks if the input is valid
+class InputValidator():
+    ...

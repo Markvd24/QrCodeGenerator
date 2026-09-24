@@ -738,91 +738,91 @@ black_counter = [1 for _ in range(8)]
 
 pattern = [1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0]
 
-# for mask_pattern in range(8):
-#     for y in range(VAR_QR_SIZE):
+for mask_pattern in range(8):
+    for y in range(VAR_QR_SIZE):
 
-#         same_counter[mask_pattern] = sign(mask_bit(0, y, mask_pattern))
+        same_counter[mask_pattern] = sign(mask_bit(0, y, mask_pattern))
         
-#         for x in range(VAR_QR_SIZE):
-#             bit = mask_bit(x, y, mask_pattern)
+        for x in range(VAR_QR_SIZE):
+            bit = mask_bit(x, y, mask_pattern)
 
-#             # Evaluation 1
-#             if x > 0:
-#                 if sign(bit) == sign(same_counter[mask_pattern]):
-#                     same_counter[mask_pattern] += sign(bit)
-#                 else:
-#                     if abs(same_counter[mask_pattern]) >= 5:
-#                         evaluation_1[mask_pattern] += abs(same_counter[mask_pattern]) - 2
-#                     same_counter[mask_pattern] = sign(bit)
+            # Evaluation 1
+            if x > 0:
+                if sign(bit) == sign(same_counter[mask_pattern]):
+                    same_counter[mask_pattern] += sign(bit)
+                else:
+                    if abs(same_counter[mask_pattern]) >= 5:
+                        evaluation_1[mask_pattern] += abs(same_counter[mask_pattern]) - 2
+                    same_counter[mask_pattern] = sign(bit)
 
-#             # Evaluation 2
-#             if x>0 and y>0:
-#                 bits = [
-#                     mask_bit(x-1,y-1,mask_pattern),
-#                     mask_bit(x,y-1,mask_pattern),
-#                     mask_bit(x-1,y,mask_pattern),
-#                 ]
-#                 if bits.count(bit) == 3:
-#                     evaluation_2[mask_pattern] += 3
+            # Evaluation 2
+            if x>0 and y>0:
+                bits = [
+                    mask_bit(x-1,y-1,mask_pattern),
+                    mask_bit(x,y-1,mask_pattern),
+                    mask_bit(x-1,y,mask_pattern),
+                ]
+                if bits.count(bit) == 3:
+                    evaluation_2[mask_pattern] += 3
 
-#             # Evaluation 3
-#             if x >= 10:
-#                 is_pattern_1 = True
-#                 is_pattern_2 = True
-#                 for i in range(11):
-#                     X = x - 10 + i
-#                     if mask_bit(X, y, mask_pattern) != pattern[i]:
-#                         is_pattern_1 = False
-#                     else:
-#                         is_pattern_2 = False
-#                 if is_pattern_1 or is_pattern_2:
-#                     evaluation_3[mask_pattern] += 40
-#             if y >= 10:
-#                 is_pattern_1 = True
-#                 is_pattern_2 = True
-#                 for i in range(11):
-#                     Y = y - 10 + i
-#                     if mask_bit(x, Y, mask_pattern) != pattern[i]:
-#                         is_pattern_1 = False
-#                     if mask_bit(x, Y, mask_pattern) != pattern[10-i]:
-#                         is_pattern_2 = False
-#                 if is_pattern_1 or is_pattern_2:
-#                     evaluation_3[mask_pattern] += 40
+            # Evaluation 3
+            if x >= 10:
+                is_pattern_1 = True
+                is_pattern_2 = True
+                for i in range(11):
+                    X = x - 10 + i
+                    if mask_bit(X, y, mask_pattern) != pattern[i]:
+                        is_pattern_1 = False
+                    else:
+                        is_pattern_2 = False
+                if is_pattern_1 or is_pattern_2:
+                    evaluation_3[mask_pattern] += 40
+            if y >= 10:
+                is_pattern_1 = True
+                is_pattern_2 = True
+                for i in range(11):
+                    Y = y - 10 + i
+                    if mask_bit(x, Y, mask_pattern) != pattern[i]:
+                        is_pattern_1 = False
+                    if mask_bit(x, Y, mask_pattern) != pattern[10-i]:
+                        is_pattern_2 = False
+                if is_pattern_1 or is_pattern_2:
+                    evaluation_3[mask_pattern] += 40
 
-#             # Evaluation 4
-#             if bit == 0:
-#                 black_counter[mask_pattern] += 1
+            # Evaluation 4
+            if bit == 0:
+                black_counter[mask_pattern] += 1
 
-# same_counter = [0 for _ in range(8)]
+same_counter = [0 for _ in range(8)]
 
-# # Evaluation 1 vertical
-# for mask_pattern in range(8):
-#     for x in range(VAR_QR_SIZE):
-#         same_counter[mask_pattern] = sign(mask_bit(x, 0, mask_pattern))
-#         for y in range(1, VAR_QR_SIZE):
-#             bit = mask_bit(x, y, mask_pattern)
+# Evaluation 1 vertical
+for mask_pattern in range(8):
+    for x in range(VAR_QR_SIZE):
+        same_counter[mask_pattern] = sign(mask_bit(x, 0, mask_pattern))
+        for y in range(1, VAR_QR_SIZE):
+            bit = mask_bit(x, y, mask_pattern)
 
-#             if sign(bit) == sign(same_counter[mask_pattern]):
-#                 same_counter[mask_pattern] += sign(bit)
-#             else:
-#                 if abs(same_counter[mask_pattern]) >= 5:
-#                     evaluation_1[mask_pattern] += abs(same_counter[mask_pattern]) - 2
-#                 same_counter[mask_pattern] = sign(bit)
+            if sign(bit) == sign(same_counter[mask_pattern]):
+                same_counter[mask_pattern] += sign(bit)
+            else:
+                if abs(same_counter[mask_pattern]) >= 5:
+                    evaluation_1[mask_pattern] += abs(same_counter[mask_pattern]) - 2
+                same_counter[mask_pattern] = sign(bit)
 
-# # Evaluation 4
-# n_pixels = VAR_QR_SIZE ** 2
-# for count in black_counter:
-#     percentile = (count / n_pixels) * 100
+# Evaluation 4
+n_pixels = VAR_QR_SIZE ** 2
+for count in black_counter:
+    percentile = (count / n_pixels) * 100
 
-#     lower = int(abs(floor(percentile / 5) * 5 - 50) / 5)
-#     upper = int(abs(ceil(percentile / 5) * 5 - 50) / 5)
+    lower = int(abs(floor(percentile / 5) * 5 - 50) / 5)
+    upper = int(abs(ceil(percentile / 5) * 5 - 50) / 5)
 
-#     evaluation_4.append(min(lower, upper))
+    evaluation_4.append(min(lower, upper))
 
-# # Combine evaluations
-# evaluations = []
-# for i in range(8):
-#     evaluations.append(evaluation_1[i] + evaluation_2[i] + evaluation_3[i] + evaluation_4[i])
+# Combine evaluations
+evaluations = []
+for i in range(8):
+    evaluations.append(evaluation_1[i] + evaluation_2[i] + evaluation_3[i] + evaluation_4[i])
 
 def apply_mask(mask_pattern):
     for x in range(VAR_QR_SIZE):

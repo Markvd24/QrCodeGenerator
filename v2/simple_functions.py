@@ -1,4 +1,3 @@
-
 def create_byte(value:int, byte_size:int=8) -> str:
     return bin(value)[2:].zfill(byte_size)
 
